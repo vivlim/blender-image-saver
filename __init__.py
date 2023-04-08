@@ -3,7 +3,7 @@ bl_info = {
     "description": "Automatically saves any unsaved images when you save a .blend file.",
     "blender": (2, 80, 0), # bpy.context.blend_data appears to be added in 2.66.6
     "category": "User Interface",
-    "version": (1, 0, 0),
+    "version": (1, 0, 1),
     "author": "vivlim",
 }
 
@@ -39,13 +39,17 @@ def save_unsaved_images():
         
         if image_data.is_dirty:
             print("image wasn't saved", image_name)
-            if image_data.filepath == "": # It isn't set, this hasn't been saved before
-                warning_msgs.append("'{}' has NOT been saved to disk yet.".format(image_name))
-                
-            else: # it's been saved, just save it
-                image_data.save()
-                ok_msgs.append("'{}' saved to {}".format(image_name, image_data.filepath))
-
+            try:
+                if image_data.filepath == "": # It isn't set, this hasn't been saved before
+                    warning_msgs.append("'{}' has NOT been saved to disk yet.".format(image_name))
+                elif image_data.packed_file:
+                    image_data.pack()
+                    ok_msgs.append("'{}' packed as {}".format(image_name, image_data.filepath))
+                else: # it's been saved, just save it
+                    image_data.save()
+                    ok_msgs.append("'{}' saved to {}".format(image_name, image_data.filepath))
+            except Exception as err:
+                warning_msgs.append("Error trying to save '{}', please save it manually. {}, {}", image_name, err, type(err))
 
     for msg in warning_msgs:
         popup.append_label(msg)
